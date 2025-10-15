@@ -82,6 +82,10 @@ logging:
   file: "logs/proxy.log"
 ```
 
+## License
+
+MIT License - See LICENSE file for details
+
 ## Usage
 
 ### Start the Proxy
