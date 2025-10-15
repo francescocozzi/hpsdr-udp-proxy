@@ -1,0 +1,152 @@
+# HPSDR UDP Proxy Configuration
+
+proxy:
+  # Address and port for the proxy to listen on
+  listen_address: "0.0.0.0"
+  listen_port: 1024
+
+  # Buffer size for UDP packets (HPSDR typically uses 1032 bytes)
+  buffer_size: 2048
+
+  # Session timeout in seconds (if no activity)
+  session_timeout: 60
+
+  # Maximum concurrent sessions
+  max_sessions: 50
+
+database:
+  # Database type: "postgresql" or "sqlite"
+  type: "postgresql"
+
+  # PostgreSQL settings (if type is "postgresql")
+  host: "localhost"
+  port: 5432
+  name: "hpsdr_proxy"
+  user: "proxy_user"
+  password: "change_this_password"
+
+  # SQLite settings (if type is "sqlite")
+  sqlite_path: "database/proxy.db"
+
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+
+radios:
+  # List of available SDR radios
+  - name: "Radio 1"
+    ip: "192.168.1.100"
+    port: 1024
+    mac: "00:1C:C0:A2:12:34"
+    enabled: true
+    description: "Main Hermes Lite 2"
+
+  - name: "Radio 2"
+    ip: "192.168.1.101"
+    port: 1024
+    mac: "00:1C:C0:A2:12:35"
+    enabled: false
+    description: "Backup radio"
+
+auth:
+  # JWT secret key (CHANGE THIS IN PRODUCTION!)
+  jwt_secret: "your-super-secret-jwt-key-change-this-in-production"
+
+  # JWT algorithm
+  jwt_algorithm: "HS256"
+
+  # Token expiry time in seconds (default: 1 hour)
+  token_expiry: 3600
+
+  # Refresh token expiry (default: 7 days)
+  refresh_token_expiry: 604800
+
+  # Maximum login attempts before lockout
+  max_login_attempts: 5
+
+  # Lockout duration in seconds
+  lockout_duration: 300
+
+api:
+  # REST API settings
+  host: "0.0.0.0"
+  port: 8080
+
+  # Enable CORS (for web dashboard)
+  cors_enabled: true
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+
+  # API rate limiting
+  rate_limit_enabled: true
+  rate_limit_requests: 100
+  rate_limit_window: 60  # seconds
+
+logging:
+  # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Log file path
+  file: "logs/proxy.log"
+
+  # Maximum log file size (MB)
+  max_file_size: 10
+
+  # Number of backup log files to keep
+  backup_count: 5
+
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Enable JSON logging
+  json_format: false
+
+  # Log to console
+  console_enabled: true
+
+performance:
+  # Number of worker threads for packet processing
+  worker_threads: 4
+
+  # Enable packet statistics collection
+  stats_enabled: true
+
+  # Statistics collection interval (seconds)
+  stats_interval: 30
+
+  # Enable performance monitoring
+  monitoring_enabled: true
+
+security:
+  # Enable IP whitelist
+  ip_whitelist_enabled: false
+  allowed_ips:
+    - "192.168.1.0/24"
+    - "10.0.0.0/8"
+
+  # Enable IP blacklist
+  ip_blacklist_enabled: false
+  blocked_ips: []
+
+  # Require authentication for all connections
+  require_authentication: true
+
+  # Allow anonymous discovery packets (for initial setup)
+  allow_anonymous_discovery: false
+
+timeslots:
+  # Enable time slot reservations
+  enabled: true
+
+  # Minimum reservation duration (minutes)
+  min_duration: 15
+
+  # Maximum reservation duration (hours)
+  max_duration: 4
+
+  # Maximum advance booking time (days)
+  max_advance_days: 30
+
+  # Grace period after slot end (minutes)
+  grace_period: 5
