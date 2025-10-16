@@ -163,7 +163,33 @@ kill -9 <PID>
 **❌ SBAGLIATO**: Usare indirizzo della radio
 **✅ CORRETTO**: Usare indirizzo del PROXY
 
-### 6. Discovery Broadcast Non Funziona
+### 6. Loop Infinito di Discovery
+
+**Sintomo**: Log mostra discovery ripetuti in rapida successione dalla stessa sorgente
+```
+INFO - Discovery from 93.44.225.156:1024
+INFO - Forwarding discovery to radio
+INFO - Discovery from 93.44.225.156:1024
+INFO - Forwarding discovery to radio
+...continua all'infinito...
+```
+
+**Causa**: Il proxy riceve i pacchetti che lui stesso invia alla radio, creando un loop. Questo accade quando proxy e radio usano la stessa porta (1024).
+
+**Soluzione**:
+1. **AUTOMATICA (fix v0.2.0)**: Il proxy ora riconosce i pacchetti provenienti dalla radio e li inoltra al client invece di riprocessarli
+2. **MANUALE (alternativa)**: Cambia la porta del proxy in config.yaml:
+   ```yaml
+   proxy:
+     listen_port: 10240  # Usa porta diversa da 1024
+   ```
+   Poi in deskHPSDR usa porta `10240` invece di `1024`
+
+**Verifica Fix**:
+- Con fix automatico: Log dovrebbe mostrare `Received response from radio` invece di loop
+- Con porta diversa: Nessun loop perché proxy e radio non condividono la stessa porta
+
+### 7. Discovery Broadcast Non Funziona
 
 **Sintomo**: deskHPSDR invia discovery ma proxy non riceve
 
