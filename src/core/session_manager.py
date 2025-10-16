@@ -182,6 +182,68 @@ class SessionManager:
 
         self.stats['active_sessions'] = len(self.sessions_by_client)
 
+    def create_anonymous_session(
+        self,
+        client_ip: str,
+        client_port: int,
+        timeout: Optional[int] = None
+    ) -> ActiveSession:
+        """
+        Create an anonymous (unauthenticated) session for clients
+        that don't require authentication.
+
+        This creates an in-memory only session (not persisted to database)
+        for forwarding packets from anonymous clients.
+
+        Args:
+            client_ip: Client IP address
+            client_port: Client port
+            timeout: Optional custom timeout in seconds
+
+        Returns:
+            ActiveSession object
+        """
+        client_address = (client_ip, client_port)
+
+        # Check if session already exists
+        existing = self.sessions_by_client.get(client_address)
+        if existing:
+            self.logger.debug(
+                f"Anonymous session already exists for {client_ip}:{client_port}, reusing"
+            )
+            return existing
+
+        # Use provided timeout or default
+        if timeout is None:
+            timeout = self.session_timeout
+
+        # Create in-memory only session (no database persistence)
+        now = datetime.utcnow()
+        session = ActiveSession(
+            session_id=-1,  # Negative ID indicates anonymous session
+            user_id=-1,  # No user
+            username="anonymous",
+            token="",  # No token
+            client_address=client_address,
+            radio_address=None,
+            radio_id=None,
+            created_at=now,
+            expires_at=now + timedelta(seconds=timeout * 2),  # Longer timeout for anonymous
+            last_activity=now,
+            authenticated=False
+        )
+
+        # Add to lookup tables (but not by token since there's no token)
+        self.sessions_by_client[session.client_address] = session
+        self.sessions_by_id[session.session_id] = session
+
+        self.stats['active_sessions'] = len(self.sessions_by_client)
+        self.stats['total_sessions'] += 1
+
+        self.logger.debug(f"Anonymous session created for {client_ip}:{client_port}")
+
+        return session
+
     @log_exceptions(get_logger(__name__))
     async def create_session(
         self,

@@ -197,7 +197,15 @@ class HPSDRProxy:
 
         radio = list(self.radios.values())[0]
 
-        # Assign radio to session if we have one
+        # Create or get session for anonymous client (needed for forwarding)
+        if not session and self._allow_anonymous:
+            session = self.session_manager.create_anonymous_session(
+                client_ip,
+                client_port
+            )
+            self.logger.debug(f"Created anonymous session for {client_ip}:{client_port}")
+
+        # Assign radio to session
         if session:
             self.session_manager.assign_radio(
                 client_ip,
@@ -206,8 +214,10 @@ class HPSDRProxy:
                 radio.port,
                 radio_id=None  # TODO: Get radio ID from database
             )
+            self.logger.info(f"Assigned radio {radio.name} to client {client_ip}:{client_port}")
 
         # Forward discovery to radio
+        self.logger.info(f"Forwarding discovery to radio {radio.ip}:{radio.port}")
         await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
 
         # Start listening for radio response in background

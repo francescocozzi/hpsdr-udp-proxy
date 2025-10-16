@@ -45,16 +45,24 @@ python3 main.py -v
 
 ## 📋 Log Corretto
 
-### Prima (NON funziona)
+### Prima (NON funziona) - Autenticazione richiesta
 ```
 WARNING - Discovery from unauthenticated client 127.0.0.1:53647
+```
+
+### Prima (NON funziona) - Nessuna sessione creata
+```
+INFO - Discovery from 127.0.0.1:53647
+# Nessun log di forwarding - pacchetto droppato silenziosamente
 ```
 
 ### Dopo (FUNZIONA)
 ```
 INFO - Discovery from 127.0.0.1:53647
-INFO - Assigning radio IO7T Radio to client
+DEBUG - Created anonymous session for 127.0.0.1:53647
+INFO - Assigned radio IO7T Radio to client 127.0.0.1:53647
 INFO - Forwarding discovery to radio io7t.ddns.net:1024
+DEBUG - Forwarded XX bytes from 127.0.0.1:53647 to radio
 ```
 
 ---
