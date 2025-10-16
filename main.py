@@ -154,7 +154,18 @@ class HPSDRProxy:
         client_ip, client_port = addr
 
         try:
-            # Parse packet
+            # Check if packet is from a configured radio (response, not request)
+            # Radios are identified by their IP (port may vary)
+            is_from_radio = client_ip in self.radios
+
+            if is_from_radio:
+                # This is a response FROM the radio TO a client
+                # Forward it to the appropriate client
+                self.logger.debug(f"Received response from radio {client_ip}:{client_port}")
+                await self.packet_forwarder.forward_to_client(data, client_ip, client_port)
+                return
+
+            # Parse packet from client
             packet = self.packet_handler.parse(data)
 
             # Handle discovery packets
