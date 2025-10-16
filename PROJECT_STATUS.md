@@ -2,11 +2,11 @@
 
 **Ultimo aggiornamento**: 16 Ottobre 2025
 **Versione**: 0.2.0-alpha
-**Stato**: In sviluppo (Fase 2 completata, ~75% del progetto totale)
+**Stato**: In sviluppo (Fase 3 completata, ~85% del progetto totale)
 
 ## 📋 Sommario Esecutivo
 
-Sono state completate le **Fasi 1 e 2** del progetto HPSDR UDP Proxy/Gateway con sistema di autenticazione. Il progetto fornisce un'architettura completa e funzionale con tutti i componenti core implementati: networking UDP, parsing protocollo HPSDR, database manager, authentication manager, session manager e packet forwarder. Rimane solo l'integrazione finale nel main.py per il funzionamento end-to-end.
+Sono state completate le **Fasi 1, 2 e 3** del progetto HPSDR UDP Proxy/Gateway con sistema di autenticazione. Il progetto fornisce un'architettura completa e funzionale con tutti i componenti core implementati e integrati: networking UDP, parsing protocollo HPSDR, database manager, authentication manager, session manager, packet forwarder. L'integrazione in main.py è completata e il sistema è pronto per il testing end-to-end.
 
 ## ✅ Componenti Implementati
 
@@ -100,21 +100,22 @@ Sono state completate le **Fasi 1 e 2** del progetto HPSDR UDP Proxy/Gateway con
 - JSON serialization
 - Type hints completi
 
-### 5. Applicazione Principale (80%)
+### 5. Applicazione Principale (100%)
 
 #### Main Entry Point
-- **File**: `main.py`
+- **File**: `main.py` (~420 LOC)
 - **Features implementate**:
-  - Argomenti command-line
-  - Graceful shutdown (SIGINT/SIGTERM)
-  - Component initialization
-  - Error handling
-  - Statistics reporting
-
-**TODO**:
-- [ ] Integrare Database Manager
-- [ ] Integrare Auth Manager
-- [ ] Implementare logica di forwarding completa
+  - ✅ Argomenti command-line (config, verbose, version)
+  - ✅ Graceful shutdown (SIGINT/SIGTERM)
+  - ✅ Component initialization completa
+  - ✅ Database Manager integration
+  - ✅ Auth Manager integration
+  - ✅ Session Manager con cleanup automatico
+  - ✅ Packet Forwarder integration
+  - ✅ Discovery packet handling
+  - ✅ Data packet handling
+  - ✅ Error handling globale
+  - ✅ Statistics reporting finale
 
 ### 6. Scripts Utilities (100%)
 
@@ -196,16 +197,21 @@ Implementato:
 - ✅ Error handling e recovery
 - ✅ Throughput e bandwidth calculation
 
-## ⏸️ Componenti Rimanenti (Fase 3+)
+## ✅ Fase 3: Integration (COMPLETATA)
 
-### Main Integration (IN PROGRESS)
-**File**: `main.py` (DA COMPLETARE)
+### Main Integration ✅
+**File**: `main.py` (~420 LOC) - COMPLETATO
 
-Richiede:
-- Wiring di tutti i componenti
-- Packet flow end-to-end
-- Error handling globale
-- Graceful shutdown
+Implementato:
+- ✅ Wiring di tutti i componenti
+- ✅ Packet flow end-to-end (discovery e data)
+- ✅ Error handling globale
+- ✅ Graceful shutdown con cleanup
+- ✅ Session validation per ogni pacchetto
+- ✅ Radio assignment automatico per discovery
+- ✅ Statistiche finali al shutdown
+
+## ⏸️ Componenti Rimanenti (Fase 4+)
 
 ### REST API (OPZIONALE)
 **Files**: `src/api/rest_api.py`, `src/api/routes/*.py` (FUTURO)
@@ -221,19 +227,19 @@ Endpoints opzionali:
 
 ### Codice Scritto
 - **File Python**: 17
-- **Linee di codice**: ~4,500
-- **File documentazione**: 6 (Markdown)
-- **Linee documentazione**: ~2,500
+- **Linee di codice**: ~5,000
+- **File documentazione**: 7 (Markdown)
+- **Linee documentazione**: ~2,800
 
 ### Struttura Directory
 ```
 14 directories, 28 files
 
 src/
-  ├── core/          (5 files, ~1,800 LOC)
+  ├── core/          (5 files, ~1,900 LOC)
   │   ├── udp_listener.py       (~350 LOC)
   │   ├── packet_handler.py     (~350 LOC)
-  │   ├── session_manager.py    (~450 LOC)
+  │   ├── session_manager.py    (~500 LOC)
   │   ├── forwarder.py          (~300 LOC)
   │   └── __init__.py
   ├── auth/          (4 files, ~1,500 LOC)
@@ -255,6 +261,8 @@ docs/
 
 scripts/
   └── init_db.py     (~150 LOC)
+
+main.py              (~420 LOC)
 ```
 
 ### Coverage Componenti
@@ -272,59 +280,66 @@ scripts/
 | Auth System | 100% | ✅ JWT + bcrypt complete |
 | Session Management | 100% | ✅ Complete con cleanup |
 | Packet Forwarding | 100% | ✅ Bidirectional complete |
-| Main Integration | 20% | ⏸️ In progress |
+| Main Integration | 100% | ✅ COMPLETATA |
 | REST API | 0% | ⏸️ Optional/Future |
 | Testing | 0% | ⏸️ Pending |
-| **TOTALE** | **~75%** | |
+| **TOTALE** | **~85%** | |
 
-## 🎯 Prossimi Passi (Fase 3)
+## 🎯 Prossimi Passi (Fase 4)
 
-### Priorità Alta (Blockers per funzionamento)
-1. **Main Integration** ⏸️ IN PROGRESS - Collegare tutti i componenti
-2. **Testing End-to-End** - Verificare packet flow completo
-3. **Bug Fixing** - Risolvere eventuali problemi di integrazione
+### Priorità Alta (Testing)
+1. **Testing End-to-End** - Verificare packet flow completo con radio reale
+2. **Unit Testing** - Scrivere test per componenti critici
+3. **Bug Fixing** - Risolvere eventuali problemi trovati durante testing
+4. **Performance Testing** - Verificare latenza <5ms e throughput >1000 pps
 
-### Priorità Media
-4. REST API base (auth endpoints) - Opzionale
-5. Unit testing - Aumentare coverage
-6. Performance tuning - Ottimizzazioni
+### Priorità Media (Features opzionali)
+5. REST API base (auth endpoints) - Opzionale
+6. Token extraction da pacchetti HPSDR
+7. Radio response listener migliorato
+8. Performance tuning e ottimizzazioni
 
-### Priorità Bassa
-7. Advanced features (time slots UI)
-8. Web dashboard
-9. Docker deployment
-10. Advanced monitoring
+### Priorità Bassa (Future)
+9. Advanced features (time slots UI)
+10. Web dashboard
+11. Docker deployment
+12. Advanced monitoring (Prometheus, Grafana)
 
 ## 🚀 Come Procedere
 
-### Per completare Fase 2 (stima: 2-3 settimane):
+### ✅ Fase 1-3 COMPLETATE
 
-1. **Database Manager** (3-4 giorni)
-   - Implementare connection pooling
-   - CRUD operations
-   - Unit tests
+Tutti i componenti core sono implementati e integrati. Il sistema è pronto per testing.
 
-2. **Authentication Manager** (3-4 giorni)
-   - JWT implementation
-   - Password hashing
-   - Login flow
-   - Unit tests
+### 🔜 Fase 4: Testing & Production (stima: 2-3 settimane)
 
-3. **Session Manager** (2-3 giorni)
-   - Session tracking
-   - Cleanup mechanism
-   - Integration con Auth
+1. **Testing Setup** (1-2 giorni)
+   - Setup pytest framework
+   - Configurare test database
+   - Mock HPSDR packets
 
-4. **Packet Forwarder** (3-4 giorni)
-   - Forwarding logic
-   - Address translation
-   - Performance optimization
-   - Integration testing
+2. **Unit Testing** (3-4 giorni)
+   - Test packet handler
+   - Test authentication manager
+   - Test session manager
+   - Test database operations
 
-5. **Integration** (3-4 giorni)
-   - Connettere tutti i componenti
-   - End-to-end testing
-   - Bug fixing
+3. **Integration Testing** (3-4 giorni)
+   - Test end-to-end flow
+   - Test con radio reale (Hermes Lite 2)
+   - Test con client deskHPSDR
+   - Performance benchmarking
+
+4. **Bug Fixing & Optimization** (3-5 giorni)
+   - Risolvere problemi trovati
+   - Ottimizzare performance
+   - Migliorare error handling
+
+5. **Documentation & Deployment** (2-3 giorni)
+   - Completare documentation
+   - Creare deployment guide
+   - Docker container (opzionale)
+   - Setup systemd service
 
 ## 📝 Note Tecniche
 
@@ -354,45 +369,49 @@ Nessuno al momento (codice non ancora eseguito in produzione)
 
 ## ⚠️ Limitazioni Attuali
 
-1. **Non funzionale end-to-end**: Mancano componenti critici (Auth, Session, Forwarder)
-2. **Nessun test**: Zero test coverage
-3. **API non implementata**: REST endpoints mancanti
-4. **Protocol 2 incompleto**: Solo supporto parziale
-5. **No monitoring**: Metriche base ma no export (Prometheus, etc.)
+1. **Non testato**: Sistema non testato con hardware reale
+2. **Nessun test**: Zero test coverage (unit, integration)
+3. **API non implementata**: REST endpoints mancanti (opzionale)
+4. **Protocol 2 incompleto**: Solo supporto parziale Protocol 2
+5. **Token extraction**: Token da pacchetti HPSDR non ancora estratto
+6. **No monitoring export**: Metriche base ma no Prometheus export
 
 ## 📈 Roadmap
 
 ### Fase 1: Fondamenta (COMPLETATA ✅)
-- Infrastruttura base
-- Networking UDP
-- Protocol parsing
-- Database schema
-- Documentazione base
+- ✅ Infrastruttura base
+- ✅ Networking UDP
+- ✅ Protocol parsing
+- ✅ Database schema
+- ✅ Documentazione base
 
-### Fase 2: Core Features (IN CORSO 🚧)
-- Database Manager
-- Authentication
-- Session Management
-- Packet Forwarding
+### Fase 2: Core Features (COMPLETATA ✅)
+- ✅ Database Manager
+- ✅ Authentication
+- ✅ Session Management
+- ✅ Packet Forwarding
 
-### Fase 3: API & Testing (PROSSIMA ⏭️)
-- REST API completa
-- Unit tests
-- Integration tests
-- API documentation
+### Fase 3: Integration (COMPLETATA ✅)
+- ✅ Main application integration
+- ✅ Component wiring completo
+- ✅ Packet flow end-to-end
+- ✅ Graceful shutdown
 
-### Fase 4: Production Ready (FUTURA 🔮)
-- Performance optimization
-- Monitoring & observability
-- High availability
-- Docker deployment
-- CI/CD pipeline
+### Fase 4: Testing & Production (PROSSIMA ⏭️)
+- ⏸️ Unit tests
+- ⏸️ Integration tests
+- ⏸️ Performance benchmarking
+- ⏸️ Bug fixing
+- ⏸️ Deployment guides
 
-### Fase 5: Advanced Features (FUTURA 🔮)
-- Web dashboard
-- Advanced scheduling
-- Multi-tenancy
-- Plugin system
+### Fase 5: API & Advanced Features (FUTURA 🔮)
+- ⏸️ REST API completa
+- ⏸️ Web dashboard
+- ⏸️ Advanced monitoring
+- ⏸️ Docker deployment
+- ⏸️ CI/CD pipeline
+- ⏸️ Time slots UI
+- ⏸️ Multi-tenancy
 
 ## 💡 Suggerimenti per Sviluppo
 
@@ -405,24 +424,32 @@ pip install -r requirements.txt
 
 # Configurazione
 cp config/config.yaml.example config/config.yaml
-# Editare config.yaml
+# Editare config.yaml con:
+# - IP della tua radio HPSDR
+# - JWT secret (generare con: python -c "import secrets; print(secrets.token_urlsafe(32))")
+# - Database settings (SQLite per dev, PostgreSQL per prod)
 
 # Database
 python scripts/init_db.py
 
-# Run (attualmente solo logging)
+# Run
 python main.py -v
+
+# Il proxy è ora in ascolto sulla porta 1024
+# Configura il tuo client HPSDR (deskHPSDR) per connettersi a questo IP
 ```
 
-### Sviluppo Componenti Mancanti
+### Testing del Sistema
 
-Ordine consigliato:
+Ordine consigliato per testing:
 
-1. **Database Manager**: Fondamentale per tutto
-2. **Auth Manager**: Dipende da DB Manager
-3. **Session Manager**: Dipende da Auth
-4. **Packet Forwarder**: Può essere sviluppato in parallelo
-5. **REST API**: Ultimo, dipende da tutto
+1. **Database**: Verificare connessione e operazioni CRUD
+2. **Authentication**: Test login, token generation, password hashing
+3. **UDP Listener**: Test ricezione pacchetti
+4. **Packet Handler**: Test parsing HPSDR packets
+5. **Session Manager**: Test session lifecycle
+6. **Packet Forwarder**: Test forwarding bidirezionale
+7. **End-to-End**: Test con radio e client reale
 
 ### Testing
 
@@ -439,10 +466,10 @@ pytest --cov=src tests/
 
 ## 📞 Contatti e Contributi
 
-- **Repository**: [GitHub URL here]
-- **Issues**: [GitHub Issues]
+- **Repository**: https://github.com/francescocozzi/hpsdr-udp-proxy
+- **Issues**: https://github.com/francescocozzi/hpsdr-udp-proxy/issues
 - **Documentation**: `/docs` folder
-- **License**: [Specify license]
+- **License**: MIT License (vedi LICENSE file)
 
 ## 🎓 Risorse Utili
 
@@ -458,5 +485,6 @@ pytest --cov=src tests/
 
 ---
 
-**Ultimo aggiornamento**: 15 Ottobre 2025
-**Prossima milestone**: Completamento Fase 2 (Database + Auth + Session)
+**Ultimo aggiornamento**: 16 Ottobre 2025
+**Prossima milestone**: Fase 4 - Testing & Production Ready
+**Stato progetto**: 85% completato - Core funzionalità implementate e integrate
