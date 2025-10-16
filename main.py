@@ -65,9 +65,33 @@ class HPSDRProxy:
         # Radio mapping (from config)
         self.radios = {radio.ip: radio for radio in self.config.get_enabled_radios()}
 
+        # Mapping from resolved IP to radio (for packet routing)
+        self.radio_ips = {}  # Will be populated in initialize()
+
+    async def _resolve_radio_ips(self):
+        """Resolve radio hostnames to IP addresses for packet routing"""
+        import socket
+
+        self.radio_ips = {}
+
+        for hostname, radio in self.radios.items():
+            try:
+                # Resolve hostname to IP
+                resolved_ip = socket.gethostbyname(hostname)
+                self.radio_ips[resolved_ip] = radio
+                self.logger.info(f"Resolved {hostname} → {resolved_ip}")
+
+            except socket.gaierror as e:
+                self.logger.error(f"Failed to resolve {hostname}: {e}")
+                # Keep hostname in mapping as fallback
+                self.radio_ips[hostname] = radio
+
     async def initialize(self):
         """Initialize all components"""
         self.logger.info("Initializing components...")
+
+        # Resolve radio hostnames to IPs for packet routing
+        await self._resolve_radio_ips()
 
         # 1. Initialize packet handler
         self.packet_handler = PacketHandler()
@@ -155,8 +179,8 @@ class HPSDRProxy:
 
         try:
             # Check if packet is from a configured radio (response, not request)
-            # Radios are identified by their IP (port may vary)
-            is_from_radio = client_ip in self.radios
+            # Use resolved IPs for matching (radio_ips contains IP→radio mapping)
+            is_from_radio = client_ip in self.radio_ips
 
             if is_from_radio:
                 # This is a response FROM the radio TO a client
