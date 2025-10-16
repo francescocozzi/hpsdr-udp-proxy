@@ -1,7 +1,6 @@
 # 🧪 Report Test - HPSDR UDP Proxy
 **Data**: 16 Ottobre 2025
 **Versione**: 0.2.0-alpha
-**Tester**: Claude (Automated)
 
 ---
 
@@ -363,7 +362,6 @@ Il sistema è **pronto per l'uso con hardware reale**.
 
 ---
 
-**Test eseguiti da**: Claude (Automated Testing)
 **Data**: 16 Ottobre 2025
 **Durata totale test**: ~15 minuti
 **Commit**: [Da creare con questi risultati]

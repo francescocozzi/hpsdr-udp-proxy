@@ -218,7 +218,7 @@ class PacketForwarder:
                 self.session_stats[session.session_id]['bytes_received'] += len(data)
 
             self.logger.debug(
-                f"Forwarded {len(data)} bytes from radio {radio_ip}:{radio_port} "
+                f"→ Forwarded {len(data)} bytes from radio {radio_ip}:{radio_port} "
                 f"to client {client_address[0]}:{client_address[1]}"
             )
 

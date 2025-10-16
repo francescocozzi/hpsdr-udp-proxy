@@ -1,7 +1,6 @@
 # 🎉 Riepilogo Completo Test - HPSDR UDP Proxy
 
 **Data**: 16 Ottobre 2025
-**Eseguito da**: Claude (Automated Testing)
 **Durata totale**: ~15 minuti
 
 ---

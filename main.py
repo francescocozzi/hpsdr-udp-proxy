@@ -185,7 +185,7 @@ class HPSDRProxy:
             if is_from_radio:
                 # This is a response FROM the radio TO a client
                 # Forward it to the appropriate client
-                self.logger.debug(f"Received response from radio {client_ip}:{client_port}")
+                self.logger.info(f"✓ Received response from radio {client_ip}:{client_port} - forwarding to client")
                 await self.packet_forwarder.forward_to_client(data, client_ip, client_port)
                 return
 
@@ -200,11 +200,16 @@ class HPSDRProxy:
             elif packet.packet_type == HPSDRPacketType.DATA:
                 await self._handle_data(packet, client_ip, client_port, data)
 
-            # Handle other packet types
+            # Handle other packet types (including UNKNOWN - likely data packets)
             else:
-                self.logger.debug(f"Received {packet.packet_type.name} packet from {client_ip}:{client_port}")
-                # Forward packet (best effort)
-                await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
+                # Treat UNKNOWN packets as data packets (common for HPSDR Protocol 1)
+                if packet.packet_type == HPSDRPacketType.UNKNOWN:
+                    self.logger.debug(f"UNKNOWN packet from {client_ip}:{client_port} - treating as DATA")
+                    await self._handle_data(packet, client_ip, client_port, data)
+                else:
+                    self.logger.info(f"⚠️ Unhandled {packet.packet_type.name} packet from {client_ip}:{client_port} - forwarding anyway")
+                    # Forward packet (best effort)
+                    await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
 
         except Exception as e:
             self.logger.error(f"Error handling packet from {client_ip}:{client_port}: {e}")
@@ -232,6 +237,17 @@ class HPSDRProxy:
 
         radio = list(self.radios.values())[0]
 
+        # Get resolved IP for this radio
+        resolved_radio_ip = None
+        for ip, r in self.radio_ips.items():
+            if r == radio:
+                resolved_radio_ip = ip
+                break
+
+        if not resolved_radio_ip:
+            self.logger.error(f"No resolved IP found for radio {radio.name}")
+            return
+
         # Create or get session for anonymous client (needed for forwarding)
         if not session and self._allow_anonymous:
             session = self.session_manager.create_anonymous_session(
@@ -240,16 +256,16 @@ class HPSDRProxy:
             )
             self.logger.debug(f"Created anonymous session for {client_ip}:{client_port}")
 
-        # Assign radio to session
+        # Assign radio to session using RESOLVED IP
         if session:
             self.session_manager.assign_radio(
                 client_ip,
                 client_port,
-                radio.ip,
+                resolved_radio_ip,  # Use resolved IP instead of hostname
                 radio.port,
                 radio_id=None  # TODO: Get radio ID from database
             )
-            self.logger.info(f"Assigned radio {radio.name} to client {client_ip}:{client_port}")
+            self.logger.info(f"Assigned radio {radio.name} ({resolved_radio_ip}:{radio.port}) to client {client_ip}:{client_port}")
 
         # Forward discovery to radio
         self.logger.info(f"Forwarding discovery to radio {radio.ip}:{radio.port}")
@@ -264,9 +280,31 @@ class HPSDRProxy:
         # Check session
         session = self.session_manager.get_session_by_client(client_ip, client_port)
 
-        if not session and not self._allow_anonymous:
-            self.logger.debug(f"Data packet from {client_ip}:{client_port} - no session")
-            return
+        if not session:
+            if self._allow_anonymous:
+                # Create session on-the-fly for data packets too
+                self.logger.debug(f"Creating anonymous session for data from {client_ip}:{client_port}")
+                session = self.session_manager.create_anonymous_session(client_ip, client_port)
+
+                # Assign same radio as discovery
+                radio = list(self.radios.values())[0]
+                resolved_radio_ip = None
+                for ip, r in self.radio_ips.items():
+                    if r == radio:
+                        resolved_radio_ip = ip
+                        break
+
+                if resolved_radio_ip:
+                    self.session_manager.assign_radio(
+                        client_ip,
+                        client_port,
+                        resolved_radio_ip,
+                        radio.port,
+                        radio_id=None
+                    )
+            else:
+                self.logger.warning(f"Data packet from {client_ip}:{client_port} - no session, dropping")
+                return
 
         # Forward to radio
         await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
