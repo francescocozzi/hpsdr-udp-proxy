@@ -328,6 +328,29 @@ Per problemi o domande:
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [JWT](https://jwt.io/)
 
+## 📄 Licenza
+
+Questo progetto è rilasciato sotto licenza **MIT License**.
+
+### Cosa significa?
+
+✅ **Puoi**:
+- Usare il software per qualsiasi scopo (personale, commerciale, ecc.)
+- Modificare il codice come preferisci
+- Distribuire copie del software
+- Includere il software in progetti commerciali
+
+⚠️ **Devi**:
+- Includere la nota di copyright originale
+- Includere copia della licenza MIT
+
+❌ **Non puoi**:
+- Ritenere l'autore responsabile per problemi del software
+
+**Copyright (c) 2025 Francesco Cozzi**
+
+Vedi il file [LICENSE](LICENSE) per il testo completo della licenza.
+
 ## 🏆 Riconoscimenti
 
 Basato sulle specifiche del protocollo HPSDR e sulla community OpenHPSDR.
@@ -335,5 +358,5 @@ Basato sulle specifiche del protocollo HPSDR e sulla community OpenHPSDR.
 ---
 
 **Creato**: 15 Ottobre 2025
-**Versione**: 0.1.0-alpha
-**Stato**: Fase 1 completata, pronto per Fase 2
+**Versione**: 0.2.0-alpha (Fase 2 completata)
+**Stato**: ~75% completato, integrazione in corso
