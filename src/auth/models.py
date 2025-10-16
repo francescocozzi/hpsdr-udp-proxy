@@ -201,7 +201,7 @@ class ActivityLog(Base):
     description = Column(Text)
     ip_address = Column(String(45))
     timestamp = Column(DateTime, default=func.now(), index=True)
-    metadata = Column(JSON)
+    extra_data = Column(JSON)  # Renamed from metadata (reserved name)
 
     # Relationships
     user = relationship("User", back_populates="activity_logs")
@@ -220,7 +220,7 @@ class ActivityLog(Base):
             'description': self.description,
             'ip_address': self.ip_address,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'metadata': self.metadata,
+            'extra_data': self.extra_data,
         }
 
 

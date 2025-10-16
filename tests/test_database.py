@@ -65,7 +65,7 @@ async def test_database():
             username="test_user",
             password_hash="$2b$12$test_hash",
             email="test@example.com",
-            role="user"
+            is_admin=False
         )
         print(f"   ✓ Utente creato con ID: {user.id}")
         user_id = user.id
@@ -101,10 +101,11 @@ async def test_database():
     # Test lista utenti
     print("\n7. Test lista tutti gli utenti...")
     try:
-        users = await db.get_all_users()
+        users = await db.list_users()
         print(f"   ✓ Trovati {len(users)} utenti nel database")
         for u in users:
-            print(f"     - {u.username} ({u.email}) - {u.role}")
+            role_str = "Admin" if u.is_admin else "User"
+            print(f"     - {u.username} ({u.email}) - {role_str}")
     except Exception as e:
         print(f"   ✗ Errore lista utenti: {e}")
 
@@ -127,7 +128,7 @@ async def test_database():
     if radio_id:
         print("\n9. Test recupero radio...")
         try:
-            radios = await db.get_all_radios()
+            radios = await db.list_radios()
             print(f"   ✓ Trovate {len(radios)} radio nel database")
             for r in radios:
                 status = "Abilitata" if r.enabled else "Disabilitata"
@@ -171,9 +172,9 @@ async def test_database():
     print("\n12. Test activity log...")
     try:
         await db.log_activity(
-            user_id=user_id,
             action="test_action",
-            details="Test logging from test script",
+            user_id=user_id,
+            description="Test logging from test script",
             ip_address="127.0.0.1"
         )
         print("   ✓ Activity log creato")

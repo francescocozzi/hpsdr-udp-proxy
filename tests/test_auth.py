@@ -79,7 +79,7 @@ async def test_authentication():
             username="auth_test_user",
             password=test_password,
             email="authtest@example.com",
-            role="user"
+            is_admin=False
         )
         print(f"   ✓ Utente creato con ID: {user.id}")
         test_user_id = user.id
