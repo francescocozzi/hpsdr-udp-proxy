@@ -33,8 +33,8 @@
 #### Radio Configuration
 ```yaml
 radios:
-  - name: "IO7T Radio"
-    ip: "io7t.ddns.net"
+  - name: "User Radio"
+    ip: "your-radio-address"
     port: 1024
     enabled: true
 ```
@@ -154,7 +154,7 @@ Initializing components...
 ✓ UDP listener started on 0.0.0.0:1024
 ✓ Packet forwarder started
 Configuration: 1 radio(s), auth=required
-  - Radio: IO7T Radio (io7t.ddns.net:1024)
+  - Radio: User Radio (configured)
 ======================================================================
 All components initialized successfully!
 ======================================================================
@@ -213,8 +213,8 @@ Final Statistics:
 
 ### Radio
 ```yaml
-Name: IO7T Radio
-Host: io7t.ddns.net
+Name: User Radio
+Host: (configured)
 Port: 1024
 Status: Enabled
 ```
@@ -352,8 +352,8 @@ Il proxy HPSDR è stato testato con successo e tutti i componenti core funzionan
 Il sistema è **pronto per l'uso con hardware reale**.
 
 ### Radio Configurata
-- **Nome**: IO7T Radio
-- **Indirizzo**: io7t.ddns.net:1024
+- **Nome**: User Radio
+- **Indirizzo**: (configured per testing)
 - **Status**: Configurato e pronto
 
 ### Come Usare
