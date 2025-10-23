@@ -102,7 +102,7 @@ class PacketForwarder:
 
         self.logger.info("Packet forwarder stopped")
 
-    @log_performance(get_logger(__name__), threshold_ms=5.0)
+    # @log_performance(get_logger(__name__), threshold_ms=5.0)  # Temporarily disabled for debugging
     async def forward_to_radio(
         self,
         data: bytes,
@@ -120,12 +120,21 @@ class PacketForwarder:
         Returns:
             True if forwarded successfully, False otherwise
         """
+        print(f"🔥🔥🔥 PRINT STATEMENT - ENTERED forward_to_radio for {client_ip}:{client_port}, {len(data)} bytes 🔥🔥🔥")
         try:
+            print(f"💚 About to call logger.info")
+            self.logger.info(f"⏩ [FORWARDER] Entered forward_to_radio for {client_ip}:{client_port}, {len(data)} bytes")
+            print(f"💚 Logger.info called successfully")
+
             # Get session
+            print(f"💙 Getting session for {client_ip}:{client_port}")
             session = self.session_manager.get_session_by_client(client_ip, client_port)
+            print(f"💙 Session result: {session is not None}, radio_address: {session.radio_address if session else 'NO SESSION'}")
+            self.logger.info(f"⏩ [FORWARDER] Session lookup result: {session is not None}")
 
             if not session:
-                self.logger.debug(f"No session for client {client_ip}:{client_port}")
+                print(f"❌ NO SESSION - returning False")
+                self.logger.warning(f"❌ No session for client {client_ip}:{client_port} - dropping packet")
                 self.stats['dropped_no_session'] += 1
                 return False
 
@@ -133,12 +142,17 @@ class PacketForwarder:
             radio_address = session.radio_address
 
             if not radio_address:
-                self.logger.debug(f"No radio assigned for client {client_ip}:{client_port}")
+                print(f"❌ NO RADIO ADDRESS - returning False")
+                self.logger.warning(f"❌ No radio assigned for client {client_ip}:{client_port} - dropping packet")
                 self.stats['dropped_no_radio'] += 1
                 return False
 
             # Forward packet
+            print(f"💜 About to send {len(data)} bytes to {radio_address[0]}:{radio_address[1]}")
+            self.logger.info(f"📤 [FORWARDER] About to send {len(data)} bytes to {radio_address[0]}:{radio_address[1]}")
             await self.client_listener.send_to(data, radio_address)
+            print(f"💜 Packet sent successfully!")
+            self.logger.info(f"📤 [FORWARDER] Packet sent successfully to radio")
 
             # Update statistics
             self.stats['packets_forwarded_to_radio'] += 1
@@ -160,8 +174,8 @@ class PacketForwarder:
             self.session_stats[session.session_id]['packets_sent'] += 1
             self.session_stats[session.session_id]['bytes_sent'] += len(data)
 
-            self.logger.debug(
-                f"Forwarded {len(data)} bytes from {client_ip}:{client_port} "
+            self.logger.info(
+                f"→ Forwarded {len(data)} bytes from {client_ip}:{client_port} "
                 f"to radio {radio_address[0]}:{radio_address[1]}"
             )
 
@@ -195,7 +209,7 @@ class PacketForwarder:
             client_address = self.session_manager.get_client_for_radio(radio_ip, radio_port)
 
             if not client_address:
-                self.logger.debug(f"No client for radio {radio_ip}:{radio_port}")
+                self.logger.warning(f"❌ No client for radio {radio_ip}:{radio_port} - dropping response")
                 # This is normal - radio might be sending broadcasts
                 return False
 
@@ -217,8 +231,8 @@ class PacketForwarder:
                 self.session_stats[session.session_id]['packets_received'] += 1
                 self.session_stats[session.session_id]['bytes_received'] += len(data)
 
-            self.logger.debug(
-                f"→ Forwarded {len(data)} bytes from radio {radio_ip}:{radio_port} "
+            self.logger.info(
+                f"← Forwarded {len(data)} bytes from radio {radio_ip}:{radio_port} "
                 f"to client {client_address[0]}:{client_address[1]}"
             )
 

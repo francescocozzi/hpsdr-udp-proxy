@@ -71,10 +71,11 @@ class PacketHandler:
     DISCOVERY_RESPONSE_SIZE = 60        # Discovery response
 
     # Command bytes
-    CMD_DISCOVERY = 0x02
-    CMD_SET_IP = 0x03
-    CMD_ERASE = 0x04
-    CMD_PROGRAM = 0x05
+    CMD_DATA_IQ = 0x01          # I/Q data streaming
+    CMD_DISCOVERY = 0x02        # Discovery request/response
+    CMD_SET_IP = 0x04           # Set IP address (triggers streaming)
+    CMD_ERASE = 0x03            # Flash erase command (not commonly used)
+    CMD_PROGRAM = 0x05          # Programming command (not commonly used)
 
     def __init__(self):
         """Initialize packet handler"""
@@ -100,8 +101,12 @@ class PacketHandler:
         self.stats['total_packets'] += 1
 
         try:
+            # Check for SET_IP packet (must be before discovery as both start with 0xEFFE)
+            if self._is_set_ip_packet(data):
+                return self._parse_set_ip(data)
+
             # Check for discovery packet
-            if self._is_discovery_packet(data):
+            elif self._is_discovery_packet(data):
                 self.stats['discovery_packets'] += 1
                 return self._parse_discovery(data)
 
@@ -128,6 +133,22 @@ class PacketHandler:
                 raw_data=data,
                 metadata={'error': str(e)}
             )
+
+    def _is_set_ip_packet(self, data: bytes) -> bool:
+        """
+        Check if packet is a SET IP address packet
+
+        SET IP packet format:
+        - Bytes 0-1: 0xEFFE (sync)
+        - Byte 2: 0x04 (set IP command)
+        - Byte 3: Usually 0x01
+        - Remaining: IP address and other config
+        """
+        if len(data) < 3:
+            return False
+
+        return (data[0:2] == self.SYNC_PATTERN_1 and
+                data[2] == self.CMD_SET_IP)
 
     def _is_discovery_packet(self, data: bytes) -> bool:
         """
@@ -206,6 +227,35 @@ class PacketHandler:
                 # This is a request
                 packet.is_response = False
                 self.logger.debug("Discovery request received")
+
+        return packet
+
+    def _parse_set_ip(self, data: bytes) -> HPSDRPacket:
+        """
+        Parse SET IP address packet
+
+        SET IP packet format (64 bytes):
+        - 0-1: 0xEFFE (sync)
+        - 2: 0x04 (SET IP command)
+        - 3: 0x01 (subcommand)
+        - 4-7: IP address (4 bytes)
+        - 8+: Additional configuration
+
+        This packet is sent by the client to configure the radio's
+        IP address and triggers the radio to start streaming IQ data.
+        """
+        packet = HPSDRPacket(
+            packet_type=HPSDRPacketType.SET_IP,
+            raw_data=data,
+            sync_bytes=data[0:2]
+        )
+
+        # Extract IP address if present
+        if len(data) >= 8:
+            ip_bytes = data[4:8]
+            ip_address = '.'.join(str(b) for b in ip_bytes)
+            packet.metadata['target_ip'] = ip_address
+            self.logger.info(f"🔧 SET IP ADDRESS packet: target IP={ip_address}")
 
         return packet
 

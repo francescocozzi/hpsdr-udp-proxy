@@ -184,17 +184,32 @@ class HPSDRProxy:
 
             if is_from_radio:
                 # This is a response FROM the radio TO a client
-                # Forward it to the appropriate client
                 self.logger.info(f"✓ Received response from radio {client_ip}:{client_port} - forwarding to client")
+
+                # Hermes-Lite 2 does NOT include IP in discovery response - client uses UDP source address
+                # So we just forward transparently without any rewriting
+
+                # Forward to client
                 await self.packet_forwarder.forward_to_client(data, client_ip, client_port)
                 return
 
             # Parse packet from client
             packet = self.packet_handler.parse(data)
 
+            # Log ALL incoming packets from clients for debugging
+            self.logger.info(f"📦 Packet from client {client_ip}:{client_port}: type={packet.packet_type.name}, size={len(data)} bytes")
+
             # Handle discovery packets
             if packet.packet_type == HPSDRPacketType.DISCOVERY:
+                # Log hex dump of discovery packet for comparison
+                self.logger.info(f"📊 DISCOVERY packet hex dump (first 32 bytes): {data[:32].hex()}")
                 await self._handle_discovery(packet, client_ip, client_port, data)
+
+            # Handle SET_IP packets (triggers streaming)
+            elif packet.packet_type == HPSDRPacketType.SET_IP:
+                self.logger.info(f"🔧 SET_IP packet - this triggers radio streaming!")
+                self.logger.info(f"📊 SET_IP packet hex dump (first 32 bytes): {data[:32].hex()}")
+                await self._handle_set_ip(packet, client_ip, client_port, data)
 
             # Handle data packets
             elif packet.packet_type == HPSDRPacketType.DATA:
@@ -204,7 +219,9 @@ class HPSDRProxy:
             else:
                 # Treat UNKNOWN packets as data packets (common for HPSDR Protocol 1)
                 if packet.packet_type == HPSDRPacketType.UNKNOWN:
-                    self.logger.debug(f"UNKNOWN packet from {client_ip}:{client_port} - treating as DATA")
+                    self.logger.info(f"⚡ UNKNOWN packet from {client_ip}:{client_port} - treating as DATA, forwarding to radio")
+                    # Log hex dump of packet for debugging
+                    self.logger.info(f"📊 Packet hex dump (first 32 bytes): {data[:32].hex()}")
                     await self._handle_data(packet, client_ip, client_port, data)
                 else:
                     self.logger.info(f"⚠️ Unhandled {packet.packet_type.name} packet from {client_ip}:{client_port} - forwarding anyway")
@@ -283,10 +300,63 @@ class HPSDRProxy:
         if not session:
             if self._allow_anonymous:
                 # Create session on-the-fly for data packets too
-                self.logger.debug(f"Creating anonymous session for data from {client_ip}:{client_port}")
+                self.logger.info(f"🔨 Creating anonymous session for data from {client_ip}:{client_port}")
                 session = self.session_manager.create_anonymous_session(client_ip, client_port)
 
                 # Assign same radio as discovery
+                radio = list(self.radios.values())[0]
+                resolved_radio_ip = None
+                for ip, r in self.radio_ips.items():
+                    if r == radio:
+                        resolved_radio_ip = ip
+                        break
+
+                if resolved_radio_ip:
+                    # Use data port for data packets (typically 1025 for HPSDR Protocol 1)
+                    data_port = radio.get_data_port()
+                    self.session_manager.assign_radio(
+                        client_ip,
+                        client_port,
+                        resolved_radio_ip,
+                        data_port,
+                        radio_id=None
+                    )
+                    self.logger.info(f"✓ Assigned radio {radio.name} ({resolved_radio_ip}:{data_port}) to data session {client_ip}:{client_port}")
+                else:
+                    self.logger.error(f"❌ No resolved IP for radio - cannot assign to session {client_ip}:{client_port}")
+            else:
+                self.logger.warning(f"Data packet from {client_ip}:{client_port} - no session, dropping")
+                return
+
+        # Forward to radio
+        self.logger.info(f"🚀 Calling forward_to_radio for {client_ip}:{client_port}")
+        try:
+            result = await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
+            self.logger.info(f"✅ forward_to_radio returned: {result}")
+        except Exception as e:
+            self.logger.error(f"💥 Exception in forward_to_radio: {e}")
+            import traceback
+            traceback.print_exc()
+
+    async def _handle_set_ip(self, packet, client_ip: str, client_port: int, data: bytes):
+        """
+        Handle SET IP address packet from client
+
+        This is a critical packet that triggers the radio to start streaming IQ data.
+        It's similar to a data packet but needs special handling to ensure session is ready.
+        """
+        self.logger.info(f"🔧 SET_IP packet from {client_ip}:{client_port}")
+
+        # Check session
+        session = self.session_manager.get_session_by_client(client_ip, client_port)
+
+        if not session:
+            if self._allow_anonymous:
+                # Create session on-the-fly for SET_IP packets
+                self.logger.info(f"🔨 Creating anonymous session for SET_IP from {client_ip}:{client_port}")
+                session = self.session_manager.create_anonymous_session(client_ip, client_port)
+
+                # Assign radio to session
                 radio = list(self.radios.values())[0]
                 resolved_radio_ip = None
                 for ip, r in self.radio_ips.items():
@@ -299,15 +369,100 @@ class HPSDRProxy:
                         client_ip,
                         client_port,
                         resolved_radio_ip,
-                        radio.port,
+                        radio.port,  # Use standard port 1024
                         radio_id=None
                     )
+                    self.logger.info(f"✓ Assigned radio {radio.name} ({resolved_radio_ip}:{radio.port}) to SET_IP session {client_ip}:{client_port}")
+                else:
+                    self.logger.error(f"❌ No resolved IP for radio - cannot assign to session {client_ip}:{client_port}")
             else:
-                self.logger.warning(f"Data packet from {client_ip}:{client_port} - no session, dropping")
+                self.logger.warning(f"SET_IP packet from {client_ip}:{client_port} - no session, dropping")
                 return
 
-        # Forward to radio
-        await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
+        # Forward SET_IP packet to radio - this will trigger streaming!
+        self.logger.info(f"🚀 Forwarding SET_IP command to radio - this will start streaming!")
+        try:
+            result = await self.packet_forwarder.forward_to_radio(data, client_ip, client_port)
+            self.logger.info(f"✅ SET_IP packet forwarded successfully: {result}")
+            self.logger.info(f"📡 Radio should now start streaming IQ data packets...")
+        except Exception as e:
+            self.logger.error(f"💥 Exception forwarding SET_IP: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _rewrite_discovery_response(self, data: bytes) -> bytes:
+        """
+        Rewrite discovery response to replace radio IP with proxy IP
+
+        HPSDR Discovery Response format (60 bytes):
+        - Bytes 0-1: 0xEFFE (sync)
+        - Byte 2: 0x02 (discovery command)
+        - Bytes 3-8: MAC address
+        - Byte 9: Board ID
+        - Bytes 10-13: Radio IP address (big-endian)
+        - Remaining: firmware info, etc.
+
+        We replace bytes 10-13 with the proxy's listen address.
+
+        Args:
+            data: Original discovery response
+
+        Returns:
+            Modified discovery response with proxy IP
+        """
+        if len(data) < 14:
+            self.logger.warning(f"Discovery response too short: {len(data)} bytes")
+            return data
+
+        # Debug: log the packet structure
+        self.logger.info(f"Discovery response packet ({len(data)} bytes):")
+        self.logger.info(f"  Hex dump: {data.hex()}")
+        self.logger.info(f"  Bytes 0-2: {data[0:3].hex()} (sync + cmd)")
+        self.logger.info(f"  Bytes 3-8: {data[3:9].hex()} (MAC)")
+        self.logger.info(f"  Byte 9: {data[9]:02x} (board ID)")
+        self.logger.info(f"  Bytes 10-13: {data[10:14].hex()} = {'.'.join(str(b) for b in data[10:14])}")
+
+        # Search for the radio IP (93.44.225.156 = 0x5D 0x2C 0xE1 0x9C)
+        radio_ip_bytes = bytes([93, 44, 225, 156])
+        if radio_ip_bytes in data:
+            ip_offset = data.index(radio_ip_bytes)
+            self.logger.info(f"Found radio IP at offset {ip_offset}: {'.'.join(str(b) for b in data[ip_offset:ip_offset+4])}")
+        else:
+            self.logger.warning("Radio IP not found in discovery response packet")
+
+        # Convert to mutable bytearray
+        modified = bytearray(data)
+
+        # Get proxy listen address
+        # If proxy listens on 0.0.0.0, we need to use a specific interface IP
+        listen_addr = self.config.proxy.listen_address
+
+        if listen_addr == "0.0.0.0" or listen_addr == "::":
+            # Use 127.0.0.1 for local clients, or get first non-loopback interface
+            # For simplicity, use 127.0.0.1 since deskHPSDR is running locally
+            listen_addr = "127.0.0.1"
+            self.logger.debug(f"Proxy listening on 0.0.0.0, using {listen_addr} in discovery response")
+
+        # Convert IP to bytes
+        ip_parts = listen_addr.split('.')
+        if len(ip_parts) != 4:
+            self.logger.error(f"Invalid IP address: {listen_addr}")
+            return data
+
+        try:
+            ip_bytes = bytes([int(p) for p in ip_parts])
+
+            # Replace bytes 10-13 with proxy IP
+            original_ip = '.'.join(str(b) for b in data[10:14])
+            modified[10:14] = ip_bytes
+
+            self.logger.info(f"Rewrote discovery response IP: {original_ip} → {listen_addr}")
+
+            return bytes(modified)
+
+        except (ValueError, IndexError) as e:
+            self.logger.error(f"Error rewriting discovery response: {e}")
+            return data
 
     async def _listen_for_radio_response(self, radio_ip: str, radio_port: int, client_ip: str, client_port: int):
         """

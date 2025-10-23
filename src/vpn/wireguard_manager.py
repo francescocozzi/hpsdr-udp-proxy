@@ -58,7 +58,7 @@ class WireGuardManager:
         try:
             # Generate private key
             private_result = subprocess.run(
-                ["wg", "genkey"],
+                ["sudo", "wg", "genkey"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -67,7 +67,7 @@ class WireGuardManager:
 
             # Generate public key from private key
             public_result = subprocess.run(
-                ["wg", "pubkey"],
+                ["sudo", "wg", "pubkey"],
                 input=private_key,
                 capture_output=True,
                 text=True,
@@ -157,7 +157,7 @@ PersistentKeepalive = 25
         """
         try:
             cmd = [
-                "wg", "set", self.interface,
+                "sudo", "wg", "set", self.interface,
                 "peer", public_key,
                 "allowed-ips", allowed_ips
             ]
@@ -187,7 +187,7 @@ PersistentKeepalive = 25
             True if successful
         """
         try:
-            cmd = ["wg", "set", self.interface, "peer", public_key, "remove"]
+            cmd = ["sudo", "wg", "set", self.interface, "peer", public_key, "remove"]
             subprocess.run(cmd, check=True, capture_output=True)
 
             self.logger.info(f"Removed WireGuard peer: {public_key[:16]}...")
@@ -213,7 +213,7 @@ PersistentKeepalive = 25
         """
         try:
             result = subprocess.run(
-                ["wg", "show", self.interface, "dump"],
+                ["sudo", "wg", "show", self.interface, "dump"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -248,7 +248,7 @@ PersistentKeepalive = 25
         """
         try:
             result = subprocess.run(
-                ["wg", "show", self.interface, "dump"],
+                ["sudo", "wg", "show", self.interface, "dump"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -277,7 +277,7 @@ PersistentKeepalive = 25
         """Save current WireGuard configuration to disk"""
         try:
             subprocess.run(
-                ["wg-quick", "save", self.interface],
+                ["sudo", "wg-quick", "save", self.interface],
                 check=True,
                 capture_output=True
             )
@@ -295,7 +295,7 @@ PersistentKeepalive = 25
         """
         try:
             result = subprocess.run(
-                ["wg", "show", self.interface, "public-key"],
+                ["sudo", "wg", "show", self.interface, "public-key"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -310,7 +310,7 @@ PersistentKeepalive = 25
         """Check if WireGuard interface is up"""
         try:
             result = subprocess.run(
-                ["wg", "show", self.interface],
+                ["sudo", "wg", "show", self.interface],
                 capture_output=True,
                 check=False
             )

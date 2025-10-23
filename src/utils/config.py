@@ -48,10 +48,15 @@ class RadioConfig(BaseModel):
     """Radio configuration"""
     name: str
     ip: str
-    port: int = 1024
+    port: int = 1024  # Discovery/control port
+    data_port: Optional[int] = None  # Data streaming port (HPSDR Protocol 1, typically 1025)
     mac: Optional[str] = None
     enabled: bool = True
     description: Optional[str] = None
+
+    def get_data_port(self) -> int:
+        """Get data port, defaulting to port if not specified"""
+        return self.data_port if self.data_port is not None else self.port
 
 
 class AuthConfig(BaseModel):
