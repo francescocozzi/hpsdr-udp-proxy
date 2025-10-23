@@ -5,7 +5,7 @@ annotated-types==0.7.0
 anyio==4.11.0
 asyncio==4.0.0
 asyncpg==0.30.0
-bcrypt==5.0.0
+bcrypt==4.0.1  # Fixed version for Python 3.13+ compatibility
 black==25.9.0
 certifi==2025.10.5
 click==8.3.0

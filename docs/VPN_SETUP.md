@@ -51,15 +51,22 @@ sudo apt install python3-dev python3-venv
 ### 1.1 Generate Server Keys
 
 ```bash
-# Create WireGuard directory
+# Create WireGuard directory with proper permissions
 sudo mkdir -p /etc/wireguard
-cd /etc/wireguard
+sudo chmod 700 /etc/wireguard
 
-# Generate server keypair
-wg genkey | sudo tee privatekey | wg pubkey | sudo tee publickey
+# Generate server keypair (note: cannot cd into /etc/wireguard as normal user)
+sudo sh -c 'wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey'
 
 # Secure the private key
-sudo chmod 600 privatekey
+sudo chmod 600 /etc/wireguard/privatekey
+
+# View the keys (save these - you'll need them for configuration)
+echo "Server Public Key:"
+sudo cat /etc/wireguard/publickey
+echo ""
+echo "Server Private Key:"
+sudo cat /etc/wireguard/privatekey
 ```
 
 ### 1.2 Create WireGuard Configuration
@@ -141,6 +148,11 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+
+**Note on Python Version:**
+- Python 3.11 or 3.12 recommended for production
+- Python 3.13+ works but requires bcrypt 4.0.1 (already specified in requirements.txt)
+- Python 3.14+ may have compatibility issues
 
 ### 2.4 Configure the Application
 
