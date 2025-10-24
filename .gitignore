@@ -41,9 +41,15 @@ ENV/
 
 # Configuration files with secrets
 config/config.yaml
+config.ini
+*.backup
 .env
 .env.local
 .env.*.local
+
+# VPN Configuration Files (contain private keys)
+*-vpn.conf
+*.conf
 
 # Database
 *.db

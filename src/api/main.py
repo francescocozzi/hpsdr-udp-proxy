@@ -31,6 +31,7 @@ from src.vpn.auth import (
 )
 from src.vpn.wireguard_manager import WireGuardManager
 from src.utils import get_logger
+from src.config import config
 
 # Initialize FastAPI
 app = FastAPI(
@@ -51,8 +52,8 @@ app.add_middleware(
 # Logger
 logger = get_logger(__name__)
 
-# Database setup (SQLite for development, PostgreSQL for production)
-DATABASE_URL = "sqlite+aiosqlite:///./vpn_gateway.db"
+# Database setup (from configuration)
+DATABASE_URL = config.database_url
 engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -189,12 +190,12 @@ async def startup_event():
 
     # Initialize WireGuard manager
     wg_manager = WireGuardManager(
-        interface="wg0",
-        server_port=51820,
-        server_address="10.8.0.1/24",
-        public_endpoint="your-server-ip.example.com"  # TODO: from config
+        interface=config.vpn_interface,
+        server_port=config.vpn_server_port,
+        server_address=config.vpn_server_address,
+        public_endpoint=config.vpn_public_endpoint
     )
-    logger.info("WireGuard manager initialized")
+    logger.info(f"WireGuard manager initialized: {config.vpn_public_endpoint}:{config.vpn_server_port}")
 
 
 @app.on_event("shutdown")
@@ -563,4 +564,4 @@ async def get_system_stats(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=config.api_host, port=config.api_port)
